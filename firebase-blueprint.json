@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role, personal info, nominee data, and member ID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Full legal or member name" },
+        "role": { "type": "string", "enum": ["super_admin", "entry_operator", "member"], "description": "User access level" },
+        "memberId": { "type": "string", "description": "Unique society member number, e.g. SC-101" },
+        "phone": { "type": "string", "description": "Primary mobile contact number" },
+        "permanentAddress": { "type": "string", "description": "Permanent village/district address in Bangladesh" },
+        "currentCountry": { "type": "string", "description": "Country of current residence" },
+        "dateOfBirth": { "type": "string", "description": "Date of birth or age" },
+        "photoUrl": { "type": "string", "description": "Profile picture URL or base64" },
+        "signatureUrl": { "type": "string", "description": "Signature URL or base64" },
+        "nomineeName": { "type": "string", "description": "Nominee full name" },
+        "nomineePhone": { "type": "string", "description": "Nominee mobile number" },
+        "nomineeRelation": { "type": "string", "description": "Relation with nominee" },
+        "membershipStartDate": { "type": "string", "description": "Date joined the society" },
+        "status": { "type": "string", "enum": ["active", "inactive", "suspended"], "description": "Account status" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["uid", "email", "displayName", "role", "status"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Marker document for fast, secure server-side admin role verification.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Admin UID" },
+        "email": { "type": "string", "description": "Admin email" },
+        "assignedAt": { "type": "string", "description": "Timestamp when admin role was granted" }
+      },
+      "required": ["uid", "email"]
+    },
+    "OperatorRecord": {
+      "title": "OperatorRecord",
+      "description": "Marker document for entry operator role verification.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Operator UID" },
+        "email": { "type": "string", "description": "Operator email" },
+        "assignedAt": { "type": "string", "description": "Timestamp when operator role was granted" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Verified quarterly deposit transaction or auditable correction reversal.",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "description": "Unique transaction code, e.g. TXN-2026-Q1-001" },
+        "memberUid": { "type": "string", "description": "UID of member who owns the savings" },
+        "memberId": { "type": "string", "description": "Society member ID" },
+        "memberName": { "type": "string", "description": "Member display name" },
+        "quarter": { "type": "string", "description": "Savings quarter, e.g. 2026-Q1" },
+        "fiscalYear": { "type": "string", "description": "Fiscal year, e.g. 2026" },
+        "amount": { "type": "number", "description": "Amount deposited in BDT" },
+        "depositDate": { "type": "string", "description": "Date payment was made" },
+        "entryTimestamp": { "type": "string", "description": "When record was entered" },
+        "operatorUid": { "type": "string", "description": "UID of operator or admin who entered it" },
+        "operatorName": { "type": "string", "description": "Name of operator" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "bkash", "nagad", "bank_transfer", "other"], "description": "Payment channel" },
+        "paymentReference": { "type": "string", "description": "Voucher or transaction reference" },
+        "note": { "type": "string", "description": "Optional memo or notes" },
+        "status": { "type": "string", "enum": ["confirmed", "reversed"], "description": "Transaction status" },
+        "isReversal": { "type": "boolean", "description": "True if this record is a reversal entry" },
+        "reversedTransactionId": { "type": "string", "description": "Target transaction if reversed" },
+        "reversalReason": { "type": "string", "description": "Audited reason for correction" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["transactionId", "memberUid", "memberId", "memberName", "quarter", "amount", "depositDate", "operatorUid", "paymentMethod", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable audit record for financial and administrative actions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "action": { "type": "string", "description": "Action name" },
+        "performedByUid": { "type": "string", "description": "UID of acting user" },
+        "performedByName": { "type": "string", "description": "Display name of acting user" },
+        "performedByRole": { "type": "string", "description": "Role at time of action" },
+        "targetId": { "type": "string", "description": "Target entity ID" },
+        "targetType": { "type": "string", "description": "Entity category" },
+        "details": { "type": "string", "description": "Human readable action summary" },
+        "timestamp": { "type": "string", "description": "Timestamp of action" }
+      },
+      "required": ["id", "action", "performedByUid", "details", "timestamp"]
+    },
+    "SocietyConfig": {
+      "title": "SocietyConfig",
+      "description": "System-wide society parameters including quarterly due amounts and cycle dates.",
+      "type": "object",
+      "properties": {
+        "societyNameBn": { "type": "string", "description": "Bengali society name" },
+        "societyNameEn": { "type": "string", "description": "English society name" },
+        "quarterlyDueAmount": { "type": "number", "description": "Default quarterly due amount per member in BDT" },
+        "currency": { "type": "string", "description": "Currency code" },
+        "currencySymbol": { "type": "string", "description": "Currency symbol" },
+        "currentFiscalYear": { "type": "string", "description": "Current active year" },
+        "activeQuarter": { "type": "string", "description": "Current active quarter" },
+        "contactNumber": { "type": "string", "description": "Official contact number" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" },
+        "updatedBy": { "type": "string", "description": "UID of admin who updated" }
+      },
+      "required": ["societyNameBn", "societyNameEn", "quarterlyDueAmount"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Society notices, meeting schedules, and payment reminders.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Announcement ID" },
+        "title": { "type": "string", "description": "Announcement subject" },
+        "content": { "type": "string", "description": "Detailed message" },
+        "priority": { "type": "string", "enum": ["normal", "urgent"], "description": "Importance" },
+        "authorUid": { "type": "string", "description": "Author UID" },
+        "authorName": { "type": "string", "description": "Author display name" },
+        "createdAt": { "type": "string", "description": "Created at date" }
+      },
+      "required": ["id", "title", "content", "authorUid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User account documents with role and member profile information."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted lookup collection for Super Admins."
+    },
+    "/operators/{userId}": {
+      "schema": { "$ref": "#/entities/OperatorRecord" },
+      "description": "Trusted lookup collection for Entry Operators."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "All quarterly savings deposit records and audited correction reversals."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Audited history of administrative, financial, and membership operations."
+    },
+    "/society_config/{configId}": {
+      "schema": { "$ref": "#/entities/SocietyConfig" },
+      "description": "Quarterly parameters and society branding settings."
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Notices and quarterly deposit reminders."
+    }
+  }
+}

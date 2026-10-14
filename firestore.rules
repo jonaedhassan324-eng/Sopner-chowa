@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isCurrentUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'jonaedhassan324@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOperator() {
+      return isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/operators/$(request.auth.uid)));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isCurrentUser(userId) || isOperator();
+      allow list: if isOperator() || (isSignedIn() && resource.data.uid == request.auth.uid);
+
+      allow create: if isCurrentUser(userId) && (
+        // Regular members can only create 'member' role accounts
+        (request.resource.data.role == 'member' && request.resource.data.uid == request.auth.uid) ||
+        isAdmin()
+      );
+
+      allow update: if (
+        isAdmin() ||
+        (
+          isCurrentUser(userId) &&
+          // Cannot elevate own role or status
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.uid == resource.data.uid &&
+          (!('status' in request.resource.data) || request.resource.data.status == resource.data.status)
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // --- Admin Verification Collection ---
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- Operator Verification Collection ---
+    match /operators/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- Financial Transactions Collection ---
+    match /transactions/{transactionId} {
+      allow get: if isOperator() || (isSignedIn() && resource.data.memberUid == request.auth.uid);
+      allow list: if isOperator() || (isSignedIn() && resource.data.memberUid == request.auth.uid);
+
+      // Only authorized Entry Operators or Super Admins can record deposits
+      allow create: if isOperator() &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.status in ['confirmed', 'reversed'];
+
+      // Financial records can only be corrected through audited reversal by Admin
+      allow update: if isAdmin() &&
+        request.resource.data.transactionId == resource.data.transactionId &&
+        request.resource.data.memberUid == resource.data.memberUid;
+
+      // Never silently delete financial transactions
+      allow delete: if false;
+    }
+
+    // --- Immutable Audit Logs ---
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      // Operators and Admins can record log entries when taking actions
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // --- Society Parameters & Quarterly Configuration ---
+    match /society_config/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- Society Notices & Announcements ---
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

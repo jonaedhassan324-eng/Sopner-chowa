@@ -1,0 +1,6 @@
+{
+  "name": "Shopner Chura (স্বপ্নের চূড়া)",
+  "description": "Mobile-first savings society management application with quarterly savings tracking, member dashboards, deposit receipts, role-based access (Super Admin, Entry Operator, Member), and full audit logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
